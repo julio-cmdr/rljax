@@ -40,6 +40,7 @@ class DQN(QLearning):
         fn=None,
         lr=2.5e-4,
         units=(512,),
+        env_type='minatar',
     ):
         super(DQN, self).__init__(
             num_agent_steps=num_agent_steps,
@@ -70,7 +71,7 @@ class DQN(QLearning):
                         action_space=action_space,
                         hidden_units=units,
                         dueling_net=dueling_net,
-                    )(s)
+                    )(s, env_type)
 
             self.net = hk.without_apply_rng(hk.transform(fn))
             self.params = self.params_target = self.net.init(next(self.rng), *self.fake_args)

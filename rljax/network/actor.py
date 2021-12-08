@@ -102,15 +102,15 @@ class CategoricalPolicy(hk.Module):
     def __init__(
         self,
         action_space,
-        hidden_units=(512,),
+        hidden_units=(512,)
     ):
         super(CategoricalPolicy, self).__init__()
         self.action_space = action_space
         self.hidden_units = hidden_units
 
-    def __call__(self, x):
-        if len(x.shape) == 4:
-            x = DQNBody()(x)
+    def __call__(self, x, env_type):
+        if env_type == 'atari' or env_type == 'minatar':
+            x = DQNBody()(x, env_type)
         x = MLP(
             self.action_space.n,
             self.hidden_units,

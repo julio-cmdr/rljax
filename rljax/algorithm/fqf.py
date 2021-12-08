@@ -44,6 +44,7 @@ class FQF(QRDQN):
         units=(512,),
         num_quantiles=32,
         num_cosines=64,
+        env_type='minatar',
     ):
         super(FQF, self).__init__(
             num_agent_steps=num_agent_steps,
@@ -67,6 +68,7 @@ class FQF(QRDQN):
             double_q=double_q,
             setup_net=False,
             num_quantiles=num_quantiles,
+            env_type=env_type
         )
         if setup_net:
             if fn is None:
@@ -77,9 +79,9 @@ class FQF(QRDQN):
                         action_space=action_space,
                         hidden_units=units,
                         dueling_net=dueling_net,
-                    )(s, cum_p)
+                    )(s, cum_p, env_type)
 
-            self.net, self.params, fake_feature = make_quantile_nerwork(self.rng, state_space, action_space, fn, num_quantiles)
+            self.net, self.params, fake_feature = make_quantile_nerwork(self.rng, state_space, action_space, fn, num_quantiles, env_type)
             self.params_target = self.params
             opt_init, self.opt = optax.adam(lr, eps=0.01 / batch_size)
             self.opt_state = opt_init(self.params)

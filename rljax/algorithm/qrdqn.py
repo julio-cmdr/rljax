@@ -40,6 +40,7 @@ class QRDQN(DQN):
         lr=5e-5,
         units=(512,),
         num_quantiles=200,
+        env_type='minatar',
     ):
         if fn is None:
 
@@ -49,7 +50,7 @@ class QRDQN(DQN):
                     num_quantiles=num_quantiles,
                     hidden_units=units,
                     dueling_net=dueling_net,
-                )(s)
+                )(s, env_type)
 
         super(QRDQN, self).__init__(
             num_agent_steps=num_agent_steps,

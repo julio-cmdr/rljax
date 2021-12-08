@@ -117,10 +117,10 @@ class DiscreteQFunction(hk.Module):
         self.hidden_units = hidden_units
         self.dueling_net = dueling_net
 
-    def __call__(self, x):
+    def __call__(self, x, env_type):
         def _fn(x):
-            if len(x.shape) == 4:
-                x = DQNBody()(x)
+            if env_type == 'atari' or env_type == 'minatar':
+                x = DQNBody()(x, env_type)
             output = MLP(
                 self.action_space.n,
                 self.hidden_units,
@@ -163,10 +163,10 @@ class DiscreteQuantileFunction(hk.Module):
         self.hidden_units = hidden_units
         self.dueling_net = dueling_net
 
-    def __call__(self, x):
+    def __call__(self, x, env_type):
         def _fn(x):
-            if len(x.shape) == 4:
-                x = DQNBody()(x)
+            if env_type == 'atari' or env_type == 'minatar':
+                x = DQNBody()(x, env_type)
             output = MLP(
                 self.action_space.n * self.num_quantiles,
                 self.hidden_units,
@@ -212,10 +212,10 @@ class DiscreteImplicitQuantileFunction(hk.Module):
         self.dueling_net = dueling_net
         self.pi = math.pi * jnp.arange(1, num_cosines + 1, dtype=jnp.float32).reshape(1, 1, num_cosines)
 
-    def __call__(self, x, cum_p):
-        def _fn(x, cum_p):
-            if len(x.shape) == 4:
-                x = DQNBody()(x)
+    def __call__(self, x, cum_p, env_type):
+        def _fn(x, cum_p, env_type):
+            if len(x.shape) == 4:#env_type == 'atari' or env_type == 'minatar':
+                x = DQNBody()(x, env_type)
 
             # NOTE: For IQN and FQF, number of quantiles are variable.
             feature_dim = x.shape[1]
@@ -245,5 +245,5 @@ class DiscreteImplicitQuantileFunction(hk.Module):
                 return output
 
         if self.num_critics == 1:
-            return _fn(x, cum_p)
-        return [_fn(x, cum_p) for _ in range(self.num_critics)]
+            return _fn(x, cum_p, env_type)
+        return [_fn(x, cum_p, env_type) for _ in range(self.num_critics)]

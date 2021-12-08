@@ -2,21 +2,25 @@ import argparse
 import os
 from datetime import datetime
 
-from rljax.algorithm import SAC_Discrete
-from rljax.env import make_atari_env
+from rljax.algorithm import DQN
+from rljax.env import make_minatar_env
 from rljax.trainer import Trainer
 
 
 def run(args):
-    env = make_atari_env(args.env_id, sign_rewards=False, clip_rewards=True)
-    env_test = make_atari_env(args.env_id, episode_life=False, sign_rewards=False)
+    env = make_minatar_env(args.env_id)
+    env_test = make_minatar_env(args.env_id)
 
-    algo = SAC_Discrete(
+    algo = DQN(
         num_agent_steps=args.num_agent_steps,
         state_space=env.observation_space,
         action_space=env.action_space,
         seed=args.seed,
-        env_type='atari',
+        buffer_size=100000,
+        start_steps=1000,
+        update_interval_target=1000,
+        units=(128,),
+        env_type='minatar',
     )
 
     time = datetime.now().strftime("%Y%m%d-%H%M")
@@ -37,9 +41,9 @@ def run(args):
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser()
-    p.add_argument("--env_id", type=str, default="MsPacmanNoFrameskip-v4")
-    p.add_argument("--num_agent_steps", type=int, default=3 * 10 ** 5)
-    p.add_argument("--eval_interval", type=int, default=5000)
+    p.add_argument("--env_id", type=str, default="asterix")
+    p.add_argument("--num_agent_steps", type=int, default=20000000)
+    p.add_argument("--eval_interval", type=int, default=100000)
     p.add_argument("--seed", type=int, default=0)
     args = p.parse_args()
     run(args)

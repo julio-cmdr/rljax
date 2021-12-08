@@ -9,27 +9,37 @@ from rljax.network.initializer import DeltaOrthogonal
 
 class DQNBody(hk.Module):
     """
-    CNN for the atari environment.
+    CNN for the atari and MinAtar environments.
     """
 
     def __init__(self):
         super(DQNBody, self).__init__()
 
-    def __call__(self, x):
+    def __call__(self, x, env_type):
         # He's initializer.
-        w_init = hk.initializers.Orthogonal(scale=np.sqrt(2))
-        # Floatify the image.
-        x = x.astype(jnp.float32) / 255.0
-        # Apply CNN.
-        x = hk.Conv2D(32, kernel_shape=8, stride=4, padding="VALID", w_init=w_init)(x)
-        x = nn.relu(x)
-        x = hk.Conv2D(64, kernel_shape=4, stride=2, padding="VALID", w_init=w_init)(x)
-        x = nn.relu(x)
-        x = hk.Conv2D(64, kernel_shape=3, stride=1, padding="VALID", w_init=w_init)(x)
-        x = nn.relu(x)
-        # Flatten the feature map.
-        return hk.Flatten()(x)
 
+        w_init = hk.initializers.Orthogonal(scale=np.sqrt(2))
+        if env_type == 'atari':
+            # Floatify the image.
+            x = x.astype(jnp.float32) / 255.0
+            # Apply CNN.
+            x = hk.Conv2D(32, kernel_shape=8, stride=4, padding="VALID", w_init=w_init)(x)
+            x = nn.relu(x)
+            x = hk.Conv2D(64, kernel_shape=4, stride=2, padding="VALID", w_init=w_init)(x)
+            x = nn.relu(x)
+            x = hk.Conv2D(64, kernel_shape=3, stride=1, padding="VALID", w_init=w_init)(x)
+            x = nn.relu(x)
+            # Flatten the feature map.
+            return hk.Flatten()(x)
+        else:
+            #x = x.squeeze(0)
+            # Floatify the image.
+            x = x.astype(jnp.float32)
+            # Apply CNN.
+            x = hk.Conv2D(16, kernel_shape=3, stride=1, padding="VALID", w_init=w_init)(x)
+            x = nn.relu(x)
+            # Flatten the feature map.
+            return hk.Flatten()(x)
 
 class SACEncoder(hk.Module):
     """

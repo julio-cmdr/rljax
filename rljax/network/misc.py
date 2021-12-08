@@ -33,6 +33,7 @@ def make_quantile_nerwork(
     action_space,
     fn,
     num_quantiles,
+    env_type
 ):
     """
     Make Quantile Nerwork for FQF.
@@ -43,8 +44,8 @@ def make_quantile_nerwork(
     network_dict = {}
     params_dict = {}
 
-    if len(state_space.shape) == 3:
-        network_dict["feature"] = hk.without_apply_rng(hk.transform(lambda s: DQNBody()(s)))
+    if env_type == 'atari' or env_type == 'minatar':
+        network_dict["feature"] = hk.without_apply_rng(hk.transform(lambda s: DQNBody()(s, env_type)))
         fake_feature = np.zeros((1, 7 * 7 * 64), dtype=np.float32)
     else:
         network_dict["feature"] = hk.without_apply_rng(hk.transform(lambda s: s))

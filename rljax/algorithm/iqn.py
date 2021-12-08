@@ -42,6 +42,7 @@ class IQN(QRDQN):
         num_quantiles=64,
         num_quantiles_eval=32,
         num_cosines=64,
+        env_type='minatar',
     ):
         if fn is None:
 
@@ -51,7 +52,7 @@ class IQN(QRDQN):
                     action_space=action_space,
                     hidden_units=units,
                     dueling_net=dueling_net,
-                )(s, cum_p)
+                )(s, cum_p, env_type)
 
         if not hasattr(self, "fake_args"):
             self.fake_args = (fake_state(state_space), np.empty((1, num_quantiles), dtype=np.float32))

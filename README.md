@@ -21,6 +21,8 @@ If you want to use a [MuJoCo](http://mujoco.org/) physics engine, please install
 pip install mujoco_py==2.0.2.11
 ```
 
+If you want to use MinAtar, please follow the instructions in [here](https://github.com/kenjyoung/MinAtar) to install.
+
 ## Algorithm
 Currently, following algorithms have been implemented.
 
