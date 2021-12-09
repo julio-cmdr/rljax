@@ -85,6 +85,7 @@ class IQN(QRDQN):
             fn=fn,
             lr=lr,
             num_quantiles=num_quantiles,
+            env_type=env_type
         )
         self.num_quantiles_eval = num_quantiles_eval
 

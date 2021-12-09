@@ -43,10 +43,15 @@ def make_quantile_nerwork(
         fake_state = fake_state.astype(np.float32)
     network_dict = {}
     params_dict = {}
-
+    
     if env_type == 'atari' or env_type == 'minatar':
         network_dict["feature"] = hk.without_apply_rng(hk.transform(lambda s: DQNBody()(s, env_type)))
-        fake_feature = np.zeros((1, 7 * 7 * 64), dtype=np.float32)
+        dim = 0
+        if env_type == 'atari':
+            dim = 7 * 7 * 64
+        else:
+            dim = 8 * 8 * 16 #convolutional layer output size                
+        fake_feature = np.zeros((1, dim), dtype=np.float32) #1024 for minatar
     else:
         network_dict["feature"] = hk.without_apply_rng(hk.transform(lambda s: s))
         fake_feature = fake_state
