@@ -39,7 +39,7 @@ class Trainer:
         self.algo = algo
 
         # Log setting.
-        self.log = {"step": [], "return": []}
+        self.log = {"step": [], "return": [], "time": []}
         self.csv_path = os.path.join(log_dir, "log.csv")
         self.param_dir = os.path.join(log_dir, "param")
         self.writer = SummaryWriter(log_dir=os.path.join(log_dir, "summary"))
@@ -80,7 +80,8 @@ class Trainer:
                 action = self.algo.select_action(state)
                 state, reward, done, _ = self.env_test.step(action)
                 total_return += reward
-
+        
+        time = self.time
         # Log mean return.
         mean_return = total_return / self.num_eval_episodes
         # To TensorBoard.
@@ -88,10 +89,11 @@ class Trainer:
         # To CSV.
         self.log["step"].append(step * self.action_repeat)
         self.log["return"].append(mean_return)
+        self.log["time"].append(time)
         pd.DataFrame(self.log).to_csv(self.csv_path, index=False)
 
         # Log to standard output.
-        print(f"Num steps: {step * self.action_repeat:<6}   Return: {mean_return:<5.1f}   Time: {self.time}")
+        print(f"Num steps: {step * self.action_repeat:<6}   Return: {mean_return:<5.1f}   Time: {time}")
 
     @property
     def time(self):

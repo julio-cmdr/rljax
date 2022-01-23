@@ -58,6 +58,8 @@ class DopamineTrainer(Trainer):
             sleep(2)
 
     def save_logs(self, iteration):
+        time = self.time
+        
         # Log mean return.
         mean_return = self.algo.total_rewards# / self.num_agent_steps
         # To TensorBoard.
@@ -65,7 +67,8 @@ class DopamineTrainer(Trainer):
         # To CSV.
         self.log["step"].append(iteration * self.num_agent_steps * self.action_repeat)
         self.log["return"].append(mean_return)
+        self.log["time"].append(time)
         pd.DataFrame(self.log).to_csv(self.csv_path, index=False)
 
         # Log to standard output.
-        print(f"Num steps: {iteration * self.num_agent_steps * self.action_repeat:<6}   Return: {mean_return:<5.1f}   Time: {self.time}")
+        print(f"Num steps: {iteration * self.num_agent_steps * self.action_repeat:<6}   Return: {mean_return:<5.1f}   Time: {time}")

@@ -90,6 +90,7 @@ class SLACTrainer(Trainer):
                 self.ob_test.append(state, action)
                 total_return += reward
 
+        time = self.time
         # Log mean return.
         mean_return = total_return / self.num_eval_episodes
         # To TensorBoard.
@@ -97,7 +98,8 @@ class SLACTrainer(Trainer):
         # To CSV.
         self.log["step"].append(step * self.action_repeat)
         self.log["return"].append(mean_return)
+        self.log["time"].append(time)
         pd.DataFrame(self.log).to_csv(self.csv_path, index=False)
 
         # Log to standard output.
-        print(f"Num steps: {step * self.action_repeat:<6}   Return: {mean_return:<5.1f}   Time: {self.time}")
+        print(f"Num steps: {step * self.action_repeat:<6}   Return: {mean_return:<5.1f}   Time: {time}")
