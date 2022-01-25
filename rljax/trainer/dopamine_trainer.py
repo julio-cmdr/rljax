@@ -49,7 +49,7 @@ class DopamineTrainer(Trainer):
                     self.algo.update(self.writer)
 
             self.save_logs(iteration)
-            self.algo.clear_total_rewards()
+            self.algo.clear_iteration()
 
             if self.save_params:
                 self.algo.save_params(os.path.join(self.param_dir, f"step{step}"))
@@ -61,7 +61,7 @@ class DopamineTrainer(Trainer):
         time = self.time
         
         # Log mean return.
-        mean_return = self.algo.total_rewards / self.num_agent_steps
+        mean_return = self.algo.total_rewards / self.algo.num_episodes
         # To TensorBoard.
         self.writer.add_scalar("return/test", mean_return, iteration * self.num_agent_steps * self.action_repeat)
         # To CSV.

@@ -30,6 +30,7 @@ class BaseAlgorithm(ABC):
         self.rng = PRNGSequence(seed)
 
         self.total_rewards = 0
+        self.num_episodes = 0
         self.agent_step = 0
         self.episode_step = 0
         self.learning_step = 0
@@ -46,8 +47,9 @@ class BaseAlgorithm(ABC):
     def get_key_list(self, num_keys):
         return [next(self.rng) for _ in range(num_keys)]
 
-    def clear_total_rewards(self):
+    def clear_iteration(self):
         self.total_rewards = 0
+        self.num_episodes = 0
 
     @abstractmethod
     def is_update(self):
@@ -163,6 +165,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         if done:
             self.episode_step = 0
             next_state = env.reset()
+            self.num_episodes += 1
 
         return next_state
 
@@ -213,5 +216,6 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         if done:
             self.episode_step = 0
             next_state = env.reset()
+            self.num_episodes += 1
 
         return next_state
