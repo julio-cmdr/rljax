@@ -39,7 +39,7 @@ class DopamineTrainer(Trainer):
         self.start_time = time()
         # Initialize the environment.
         state = self.env.reset()
-        self.algo.clear_total_rewards()
+        self.algo.clear_iteration()
 
         for iteration in range(1, self.num_iterations + 1):
             for step in range(1, self.num_agent_steps + 1):
