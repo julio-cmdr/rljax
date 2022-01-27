@@ -152,10 +152,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self.agent_step += 1
         self.episode_step += 1
 
-        if self.agent_step <= self.start_steps:
-            action = env.action_space.sample()
-        else:
-            action = self.explore(state)
+        action = self.explore(state)
 
         next_state, reward, done, _ = env.step(action)
         mask = self.get_mask(env, done)

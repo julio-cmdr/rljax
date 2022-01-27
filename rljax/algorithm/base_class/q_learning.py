@@ -103,9 +103,17 @@ class QLearning(OffPolicyAlgorithm):
 
     @property
     def eps_train(self):
-        if self.agent_step > self.eps_decay_steps:
-            return self.eps
-        return 1.0 + (self.eps - 1.0) / self.eps_decay_steps * self.agent_step
+        """Returns the current epsilon for the agent's epsilon-greedy policy.
+        This follows the Nature DQN schedule of a linearly decaying epsilon (Mnih et
+        al., 2015). The schedule is as follows:
+            Begin at 1. until start_steps steps have been taken; then
+            Linearly decay epsilon from 1. to eps in eps_decay_steps steps; and then
+            Use eps from there on.
+        """
+        steps_left = self.eps_decay_steps + self.start_steps - self.agent_step
+        bonus = (1.0 - self.eps) * steps_left / self.eps_decay_steps
+        bonus = np.clip(bonus, 0., 1. - self.eps)
+        return self.eps + bonus
 
     @property
     def kwargs_forward(self):
