@@ -41,6 +41,7 @@ class DQN(QLearning):
         lr=2.5e-4,
         units=(512,),
         env_type='minatar',
+        optimizer='adam'
     ):
         super(DQN, self).__init__(
             num_agent_steps=num_agent_steps,
@@ -75,7 +76,14 @@ class DQN(QLearning):
 
             self.net = hk.without_apply_rng(hk.transform(fn))
             self.params = self.params_target = self.net.init(next(self.rng), *self.fake_args)
-            opt_init, self.opt = optax.adam(lr, eps=0.01 / batch_size)
+            
+            if optimizer == 'adam':
+                opt_init, self.opt = optax.adam(lr, eps=0.01 / batch_size)
+            elif optimizer == 'rmsprop':
+                opt_init, self.opt = optax.rmsprop(lr, decay=0.95, eps=0.01 / batch_size)
+            else:
+                print('Invalid optimizer!')
+
             self.opt_state = opt_init(self.params)
 
     @partial(jax.jit, static_argnums=0)
