@@ -29,8 +29,8 @@ class BaseAlgorithm(ABC):
         np.random.seed(seed)
         self.rng = PRNGSequence(seed)
 
-        self.total_rewards = 0
-        self.num_episodes = 0
+        self.episode_return = 0
+        self.returns = []
         self.agent_step = 0
         self.episode_step = 0
         self.learning_step = 0
@@ -48,8 +48,8 @@ class BaseAlgorithm(ABC):
         return [next(self.rng) for _ in range(num_keys)]
 
     def clear_iteration(self):
-        self.total_rewards = 0
-        self.num_episodes = 0
+        self.episode_return = 0
+        self.returns.clear()
 
     @abstractmethod
     def is_update(self):
@@ -157,12 +157,13 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         next_state, reward, done, _ = env.step(action)
         mask = self.get_mask(env, done)
         self.buffer.append(state, action, reward, mask, next_state, done)
-        self.total_rewards += reward
+        self.episode_return += reward
         
         if done:
             self.episode_step = 0
             next_state = env.reset()
-            self.num_episodes += 1
+            self.returns.append(self.episode_return)
+            self.episode_return = 0
 
         return next_state
 
@@ -208,11 +209,12 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         next_state, reward, done, _ = env.step(action)
         mask = self.get_mask(env, done)
         self.buffer.append(state, action, reward, mask, log_pi, next_state)
-        self.total_rewards += reward
+        self.episode_return += reward
         
         if done:
             self.episode_step = 0
             next_state = env.reset()
-            self.num_episodes += 1
+            self.returns.append(self.episode_return)
+            self.episode_return = 0
 
         return next_state

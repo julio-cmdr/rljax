@@ -39,7 +39,7 @@ class Trainer:
         self.algo = algo
 
         # Log setting.
-        self.log = {"step": [], "return": [], "time": []}
+        self.log = {"step": [], "time": [], "return": []}
         self.csv_path = os.path.join(log_dir, "log.csv")
         self.param_dir = os.path.join(log_dir, "param")
         self.writer = SummaryWriter(log_dir=os.path.join(log_dir, "summary"))
