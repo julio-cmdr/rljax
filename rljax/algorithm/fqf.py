@@ -45,6 +45,7 @@ class FQF(QRDQN):
         num_quantiles=32,
         num_cosines=64,
         env_type='minatar',
+        munchausen=False #to do
     ):
         super(FQF, self).__init__(
             num_agent_steps=num_agent_steps,
@@ -70,6 +71,14 @@ class FQF(QRDQN):
             num_quantiles=num_quantiles,
             env_type=env_type
         )
+
+        if nstep > 1:
+            self.name += 'n' + str(nstep)
+        if use_per:
+            self.name += 'P'
+        if munchausen:
+            self.name += 'M'
+
         if setup_net:
             if fn is None:
 
