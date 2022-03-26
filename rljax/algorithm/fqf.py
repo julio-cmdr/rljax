@@ -5,6 +5,7 @@ from typing import Tuple
 import haiku as hk
 import jax
 import jax.numpy as jnp
+import jax.nn as jnn
 import numpy as np
 import optax
 
@@ -45,7 +46,10 @@ class FQF(QRDQN):
         num_quantiles=32,
         num_cosines=64,
         env_type='minatar',
-        munchausen=False #to do
+        munchausen=False,
+        tau_munchausen=0.03,
+        l0_munchausen=-1,
+        alpha_munchausen=0.9
     ):
         super(FQF, self).__init__(
             num_agent_steps=num_agent_steps,
@@ -78,6 +82,9 @@ class FQF(QRDQN):
             self.name += 'P'
         if munchausen:
             self.name += 'M'
+            if double_q:
+                print('Munchausen has not yet been implemented to work with double learning')
+                exit(1)
 
         if setup_net:
             if fn is None:
@@ -101,6 +108,16 @@ class FQF(QRDQN):
         opt_init, self.opt_cum_p = optax.rmsprop(lr_cum_p, decay=0.95, eps=1e-5, centered=True)
         self.opt_state_cum_p = opt_init(self.params_cum_p)
 
+        self.munchausen = munchausen
+        self.tau_munchausen = tau_munchausen
+        self.l0_munchausen = l0_munchausen
+        self.alpha_munchausen = alpha_munchausen
+
+        if munchausen:
+            self._calculate_target = self._calculate_target_munchausen
+        else:
+            self._calculate_target = self._calculate_usual_target
+
     def forward(self, state):
         return self._forward(self.params_cum_p, self.params, state)
 
@@ -115,7 +132,7 @@ class FQF(QRDQN):
         return self._forward_from_feature(params_cum_p, params, feature)
 
     @partial(jax.jit, static_argnums=0)
-    def _forward_from_feature(
+    def _forward_from_feature_qs(
         self,
         params_cum_p: hk.Params,
         params: hk.Params,
@@ -124,6 +141,16 @@ class FQF(QRDQN):
         cum_p, cum_p_prime = self.cum_p_net.apply(params_cum_p, feature)
         quantile_s = self.net["quantile"].apply(params["quantile"], feature, cum_p_prime)
         q_s = ((cum_p[:, 1:, None] - cum_p[:, :-1, None]) * quantile_s).sum(axis=1)
+        return q_s
+    
+    @partial(jax.jit, static_argnums=0)
+    def _forward_from_feature(
+        self,
+        params_cum_p: hk.Params,
+        params: hk.Params,
+        feature: np.ndarray,
+    ) -> jnp.ndarray:
+        q_s = self._forward_from_feature_qs(params_cum_p, params, feature)            
         return jnp.argmax(q_s, axis=1)
 
     def update(self, writer=None):
@@ -184,7 +211,7 @@ class FQF(QRDQN):
         return get_quantile_at_action(self.net["quantile"].apply(params["quantile"], feature, cum_p), action)
 
     @partial(jax.jit, static_argnums=0)
-    def _calculate_target(
+    def _calculate_usual_target(
         self,
         params_cum_p: hk.Params,
         params: hk.Params,
@@ -193,6 +220,8 @@ class FQF(QRDQN):
         done: np.ndarray,
         next_feature: np.ndarray,
         cum_p_prime: jnp.ndarray,
+        feature: np.ndarray,    
+        action: np.ndarray
     ) -> jnp.ndarray:
         if self.double_q:
             next_action = self._forward_from_feature(params_cum_p, params, next_feature)[:, None]
@@ -200,6 +229,44 @@ class FQF(QRDQN):
             next_action = self._forward_from_feature(params_cum_p, params_target, next_feature)[:, None]
         next_quantile = self._calculate_value(params_target, next_feature, next_action, cum_p_prime)
         target = reward[:, None] + (1.0 - done[:, None]) * self.discount * next_quantile
+        return jax.lax.stop_gradient(target).reshape(-1, 1, self.num_quantiles)
+
+    @partial(jax.jit, static_argnums=0)
+    def _calculate_target_munchausen(
+        self,
+        params_cum_p: hk.Params,
+        params: hk.Params,
+        params_target: hk.Params,
+        reward: np.ndarray,
+        done: np.ndarray,
+        next_feature: np.ndarray,
+        cum_p_prime: jnp.ndarray,
+        feature: np.ndarray,
+        action: np.ndarray
+    ) -> jnp.ndarray:
+
+        tau = self.tau_munchausen
+        l0 = self.l0_munchausen
+        alpha = self.alpha_munchausen
+        
+        q_s1 = self._forward_from_feature_qs(params_cum_p, params_target, next_feature)        
+        pi_s1 = jnn.softmax(q_s1/tau)
+
+        sum_next_quantiles = jnp.repeat(0.0, self.batch_size)[:, None][:, None]
+        num_actions = pi_s1.shape[1]
+        
+        for next_action_scalar in range(0, num_actions):
+            pi_s1a = pi_s1[:,next_action_scalar][:, None][:, None]
+            next_action = jnp.repeat(next_action_scalar, self.batch_size)[:, None]
+            next_quantile = self._calculate_value(params_target, next_feature, next_action, cum_p_prime)
+            sum_next_quantiles += pi_s1a*(next_quantile - tau*jnp.log(pi_s1a))
+        
+        q_s = self._forward_from_feature_qs(params_cum_p, params, feature)        
+        pi_s = jnn.softmax(q_s/tau)
+        pi_sa = pi_s[jnp.arange(len(pi_s)), action.reshape(self.batch_size)]
+        pi_sa = pi_sa[:, None][:, None]
+        
+        target = reward[:, None] + alpha * jnp.clip(tau*jnp.log(pi_sa), a_min=l0, a_max=0) + (1.0 - done[:, None]) * self.discount * sum_next_quantiles
         return jax.lax.stop_gradient(target).reshape(-1, 1, self.num_quantiles)
 
     @partial(jax.jit, static_argnums=0)
@@ -219,7 +286,7 @@ class FQF(QRDQN):
         next_feature = self.net["feature"].apply(params_target["feature"], next_state)
         cum_p_prime = jax.lax.stop_gradient(self.cum_p_net.apply(params_cum_p, feature)[1])
         quantile = self._calculate_value(params, feature, action, cum_p_prime)
-        target = self._calculate_target(params_cum_p, params, params_target, reward, done, next_feature, cum_p_prime)
+        target = self._calculate_target(params_cum_p, params, params_target, reward, done, next_feature, cum_p_prime, feature, action)
         return self._calculate_loss_and_abs_td(quantile, target, cum_p_prime, weight)
 
     @partial(jax.jit, static_argnums=0)
