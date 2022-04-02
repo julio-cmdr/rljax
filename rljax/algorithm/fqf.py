@@ -13,6 +13,16 @@ from rljax.algorithm.qrdqn import QRDQN
 from rljax.network import CumProbNetwork, DiscreteImplicitQuantileFunction, make_quantile_nerwork
 from rljax.util import get_quantile_at_action, load_params, optimize, save_params
 
+def stable_scaled_log_softmax(x, tau, axis=-1):
+    max_x = jnp.amax(x, axis=axis, keepdims=True)
+    y = x - max_x
+    tau_lse = max_x + tau * jnp.log(jnp.sum(jnp.exp(y / tau), axis=axis, keepdims=True))
+    return x - tau_lse
+
+def stable_softmax(x, tau, axis=-1):
+    max_x = jnp.amax(x, axis=axis, keepdims=True)
+    y = x - max_x
+    return jnn.softmax(y/tau, axis=axis)
 
 class FQF(QRDQN):
     name = "FQF"
@@ -250,23 +260,25 @@ class FQF(QRDQN):
         alpha = self.alpha_munchausen
         
         q_s1 = self._forward_from_feature_qs(params_cum_p, params_target, next_feature)        
-        pi_s1 = jnn.softmax(q_s1/tau)
+        pi_s1 = stable_softmax(q_s1, tau)
+        tau_log_pi_s1 = stable_scaled_log_softmax(q_s1, tau)
 
         sum_next_quantiles = jnp.repeat(0.0, self.batch_size)[:, None][:, None]
-        num_actions = pi_s1.shape[1]
+        num_actions = q_s1.shape[1]
         
         for next_action_scalar in range(0, num_actions):
             pi_s1a = pi_s1[:,next_action_scalar][:, None][:, None]
+            tau_log_pi_s1a = tau_log_pi_s1[:,next_action_scalar][:, None][:, None]
             next_action = jnp.repeat(next_action_scalar, self.batch_size)[:, None]
             next_quantile = self._calculate_value(params_target, next_feature, next_action, cum_p_prime)
-            sum_next_quantiles += pi_s1a*(next_quantile - tau*jnp.log(pi_s1a))
+            sum_next_quantiles += pi_s1a*(next_quantile - tau_log_pi_s1a)
         
         q_s = self._forward_from_feature_qs(params_cum_p, params, feature)        
-        pi_s = jnn.softmax(q_s/tau)
-        pi_sa = pi_s[jnp.arange(len(pi_s)), action.reshape(self.batch_size)]
-        pi_sa = pi_sa[:, None][:, None]
+        tau_log_pi_s = stable_scaled_log_softmax(q_s, tau)
+        tau_log_pi_sa = tau_log_pi_s[jnp.arange(len(tau_log_pi_s)), action.reshape(self.batch_size)]
+        tau_log_pi_sa = tau_log_pi_sa[:, None][:, None]
         
-        target = reward[:, None] + alpha * jnp.clip(tau*jnp.log(pi_sa), a_min=l0, a_max=0) + (1.0 - done[:, None]) * self.discount * sum_next_quantiles
+        target = reward[:, None] + alpha * jnp.clip(tau_log_pi_sa, a_min=l0, a_max=0) + (1.0 - done[:, None]) * self.discount * sum_next_quantiles
         return jax.lax.stop_gradient(target).reshape(-1, 1, self.num_quantiles)
 
     @partial(jax.jit, static_argnums=0)
