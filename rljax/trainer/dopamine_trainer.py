@@ -53,7 +53,7 @@ class DopamineTrainer(Trainer):
             self.algo.clear_iteration()
 
             if self.save_params:
-                self.algo.save_params(os.path.join(self.param_dir, f"step{self.num_iterations*self.num_agent_steps}"))
+                self.algo.save_params(os.path.join(self.param_dir, f"step{iteration*self.num_agent_steps}"))
 
             # Wait for the logging to be finished.
             sleep(2)
