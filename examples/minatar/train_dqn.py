@@ -8,8 +8,8 @@ from rljax.trainer import DopamineTrainer
 
 
 def run(args):
-    env = make_minatar_env(args.env_id)
-    env_test = make_minatar_env(args.env_id)
+    env = make_minatar_env(args.env_id, args.seed)
+    env_test = make_minatar_env(args.env_id, args.seed)
 
     algo = DQN(
         num_agent_steps=args.num_agent_steps,
