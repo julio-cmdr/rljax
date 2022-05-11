@@ -10,7 +10,7 @@ class MinAtarEnv(object):
   def __init__(self, game_name, seed, display_time=50, use_minimal_action_set=False, _max_episode_steps=9999999, **kwargs):
     self.game_name = game_name
     self.display_time = display_time
-
+    
     self.game_kwargs = kwargs
     
     self.game = Environment(
@@ -24,7 +24,7 @@ class MinAtarEnv(object):
     else:
       self.action_set = list(range(self.game.num_actions()))
 
-    self.action_space = spaces.Discrete(len(self.action_set))
+    self.action_space = spaces.Discrete(len(self.action_set), seed=seed)
     self.observation_space = spaces.Box(
       0.0, 1.0, shape=self.game.state_shape(), dtype=bool
     )
@@ -38,6 +38,15 @@ class MinAtarEnv(object):
   def reset(self):
     self.game.reset()
     return self.game.state()
+
+  def seed(self, seed=None):
+    self.action_space = spaces.Discrete(len(self.action_set), seed=seed)
+    self.game = Environment(
+      env_name=self.game_name,
+      random_seed=seed,
+      **self.game_kwargs
+    )
+    return seed
 
   def render(self, mode="human"):
     if mode == "array":

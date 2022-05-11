@@ -21,6 +21,8 @@ def run(args):
         update_interval_target=1000,
         units=(128,),
         env_type='minatar',
+        lr=2.5e-04,
+        batch_size=16
     )
 
     time = datetime.now().strftime("%Y%m%d-%H%M")
@@ -40,11 +42,10 @@ def run(args):
 
 
 if __name__ == "__main__":
-    for game in ["asterix", "breakout", "seaquest", "freeway", "space_invaders"]:
-        p = argparse.ArgumentParser()
-        p.add_argument("--env_id", type=str, default=game)
-        p.add_argument("--num_agent_steps", type=int, default=1000000)
-        p.add_argument("--num_iterations", type=int, default=20)
-        p.add_argument("--seed", type=int, default=0)
-        args = p.parse_args()
-        run(args)
+    p = argparse.ArgumentParser()
+    p.add_argument("--env_id", type=str, default="space_invaders")
+    p.add_argument("--num_agent_steps", type=int, default=1000000)
+    p.add_argument("--num_iterations", type=int, default=20)
+    p.add_argument("--seed", type=int, default=0)
+    args = p.parse_args()
+    run(args)
