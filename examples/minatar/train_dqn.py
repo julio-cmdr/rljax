@@ -12,7 +12,7 @@ def run(args):
     env_test = make_minatar_env(args.env_id, args.seed)
 
     algo = DQN(
-        num_agent_steps=args.num_agent_steps,
+        num_agent_steps=args.num_agent_steps*args.num_iterations,
         state_space=env.observation_space,
         action_space=env.action_space,
         seed=args.seed,
