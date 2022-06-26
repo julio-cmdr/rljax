@@ -23,8 +23,6 @@ class PrioritizedReplayBuffer(ReplayBuffer):
         alpha=0.6,
         beta=0.4,
         beta_steps=10 ** 5,
-        min_pa=0.0,
-        max_pa=1.0,
         eps=0.01,
     ):
         super(PrioritizedReplayBuffer, self).__init__(
@@ -38,8 +36,6 @@ class PrioritizedReplayBuffer(ReplayBuffer):
         self.alpha = alpha
         self.beta = beta
         self.beta_diff = (1.0 - beta) / beta_steps
-        self.min_pa = min_pa
-        self.max_pa = max_pa
         self.eps = eps
         self._cached_idxes = None
 
@@ -52,7 +48,7 @@ class PrioritizedReplayBuffer(ReplayBuffer):
     def _append(self, state, action, reward, next_state, done):
         # Assign max priority when stored for the first time.
         max_pa = self.tree_max.reduce(0, self._n)
-        max_pa = max(max_pa, self.max_pa)
+        max_pa = max(max_pa, self.eps)
         self.tree_max[self._p] = max_pa
         self.tree_sum[self._p] = max_pa
         super()._append(state, action, reward, next_state, done)
