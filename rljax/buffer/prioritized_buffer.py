@@ -20,7 +20,7 @@ class PrioritizedReplayBuffer(ReplayBuffer):
         action_space,
         gamma,
         nstep,
-        alpha=0.6,
+        alpha=0.55,
         beta=0.4,
         beta_steps=10 ** 5,
         eps=0.01,
