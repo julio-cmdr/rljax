@@ -22,6 +22,7 @@ pip install mujoco_py==2.0.2.11
 ```
 
 If you want to use MinAtar, please follow the instructions in [here](https://github.com/kenjyoung/MinAtar) to install.
+For MinAtar with GPU there is an Dockerfile in [here](https://github.com/julio-cmdr/rljax/blob/master/examples/minatar/Dockerfile)
 
 ## Algorithm
 Currently, following algorithms have been implemented.

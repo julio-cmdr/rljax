@@ -1,8 +1,9 @@
 import argparse
 import os
+os.environ['TF_CUDNN_DETERMINISTIC']='1'
 from datetime import datetime
 
-from rljax.algorithm import DQN
+from rljax.algorithm import FQF
 from rljax.env import make_minatar_env
 from rljax.trainer import DopamineTrainer
 
@@ -11,7 +12,7 @@ def run(args):
     env = make_minatar_env(args.env_id, args.seed)
     env_test = make_minatar_env(args.env_id, args.seed)
 
-    algo = DQN(
+    algo = FQF(
         num_agent_steps=args.num_agent_steps*args.num_iterations,
         state_space=env.observation_space,
         action_space=env.action_space,
@@ -22,7 +23,11 @@ def run(args):
         units=(128,),
         env_type='minatar',
         lr=2.5e-04,
-        batch_size=16
+        batch_size=16,
+        lr_cum_p=2.5e-10,
+        nstep=3,
+        use_per=True,
+        munchausen=True,
     )
 
     time = datetime.now().strftime("%Y%m%d-%H%M")
